@@ -2,7 +2,7 @@
 * InputEffectEngine.cpp - Code to wrap ESPAsyncE131 for input
 *
 * Project: ESPixelStick - An ESP8266 / ESP32 and E1.31 based pixel driver
-* Copyright (c) 2021, 2025 Shelby Merrick
+* Copyright (c) 2021, 2026 Shelby Merrick
 * http://www.forkineye.com
 *
 *  This program is provided free for you to use in any way that you wish,
@@ -149,17 +149,18 @@ void c_InputEffectEngine::GetConfig (JsonObject& jsonConfig)
     JsonWrite(jsonConfig, CN_EffectBrightness,   uint32_t(EffectBrightness * 100.0));
     JsonWrite(jsonConfig, CN_EffectWhiteChannel, EffectWhiteChannel);
     JsonWrite(jsonConfig, CN_EffectColor,        HexColor);
+    JsonWrite(jsonConfig, CN_EffectChannelMode,  String(EffectChannelMode));
     JsonWrite(jsonConfig, CN_pixel_count,        effectMarqueePixelAdvanceCount);
 
-    JsonWrite(jsonConfig, "FlashEnable",   FlashInfo.Enable);
-    JsonWrite(jsonConfig, "FlashMinInt",   FlashInfo.MinIntensity);
-    JsonWrite(jsonConfig, "FlashMaxInt",   FlashInfo.MaxIntensity);
-    JsonWrite(jsonConfig, "FlashMinDelay", FlashInfo.MinDelayMS);
-    JsonWrite(jsonConfig, "FlashMaxDelay", FlashInfo.MaxDelayMS);
-    JsonWrite(jsonConfig, "FlashMinDur",   FlashInfo.MinDurationMS);
-    JsonWrite(jsonConfig, "FlashMaxDur",   FlashInfo.MaxDurationMS);
-    JsonWrite(jsonConfig, "TransCount",    TransitionInfo.StepsToTarget);
-    JsonWrite(jsonConfig, "TransDelay",    TransitionInfo.TimeAtTargetMs);
+    JsonWrite(jsonConfig, CN_FlashEnable,   FlashInfo.Enable);
+    JsonWrite(jsonConfig, CN_FlashMinInt,   FlashInfo.MinIntensity);
+    JsonWrite(jsonConfig, CN_FlashMaxInt,   FlashInfo.MaxIntensity);
+    JsonWrite(jsonConfig, CN_FlashMinDelay, FlashInfo.MinDelayMS);
+    JsonWrite(jsonConfig, CN_FlashMaxDelay, FlashInfo.MaxDelayMS);
+    JsonWrite(jsonConfig, CN_FlashMinDur,   FlashInfo.MinDurationMS);
+    JsonWrite(jsonConfig, CN_FlashMaxDur,   FlashInfo.MaxDurationMS);
+    JsonWrite(jsonConfig, CN_TransCount,    TransitionInfo.StepsToTarget);
+    JsonWrite(jsonConfig, CN_TransDelay,    TransitionInfo.TimeAtTargetMs);
 
     // DEBUG_V ("");
 
@@ -470,11 +471,23 @@ void c_InputEffectEngine::SetBufferInfo (uint32_t BufferSize)
     // DEBUG_START;
 
     InputDataBufferSize = BufferSize;
+    if(EffectChannelMode == EffectChannelMode_t::ChannelMode)
+    {
+        ChannelsPerPixel = 1;
+    }
+    else
+    {
+        ChannelsPerPixel = (true == EffectWhiteChannel) ? 4 : 3;
+    }
 
-    // DEBUG_V (String ("BufferSize: ") + String (BufferSize));
-    ChannelsPerPixel = (true == EffectWhiteChannel) ? 4 : 3;
-    PixelCount = InputDataBufferSize / ChannelsPerPixel;
+    // adjust buffer usage to align to a pixel boundary
+    uint32_t ChanSizeAdjustment = (BufferSize % ChannelsPerPixel);
+    if(0 != ChanSizeAdjustment)
+    {
+        ChanSizeAdjustment = ChannelsPerPixel - ChanSizeAdjustment;
+    }
 
+    PixelCount = (BufferSize + ChanSizeAdjustment) / ChannelsPerPixel;
     PixelOffset = PixelCount & 0x0001; // handle odd number of pixels
 
     MirroredPixelCount = PixelCount;
@@ -482,6 +495,14 @@ void c_InputEffectEngine::SetBufferInfo (uint32_t BufferSize)
     {
         MirroredPixelCount = (PixelCount / 2) + PixelOffset;
     }
+
+    // DEBUG_V(String("         BufferSize: ") + String(BufferSize));
+    // DEBUG_V(String(" ChanSizeAdjustment: ") + String(ChanSizeAdjustment));
+    // DEBUG_V(String("InputDataBufferSize: ") + String(InputDataBufferSize));
+    // DEBUG_V(String("   ChannelsPerPixel: ") + String(ChannelsPerPixel));
+    // DEBUG_V(String("         PixelCount: ") + String(PixelCount));
+    // DEBUG_V(String("        PixelOffset: ") + String(PixelOffset));
+    // DEBUG_V(String(" MirroredPixelCount: ") + String(MirroredPixelCount));
 
     // DEBUG_END;
 
@@ -504,19 +525,24 @@ bool c_InputEffectEngine::SetConfig (ArduinoJson::JsonObject& jsonConfig)
     setFromJSON (EffectWhiteChannel, jsonConfig, CN_EffectWhiteChannel);
     setFromJSON (effectName,         jsonConfig, CN_currenteffect);
     setFromJSON (effectColor,        jsonConfig, CN_EffectColor);
-    // DEBUG_V (String ("effectColor: ") + effectColor);
+
+    String temp;
+    setFromJSON (temp,  jsonConfig, CN_EffectChannelMode);
+    EffectChannelMode = static_cast<EffectChannelMode_t>(temp.toInt());
+
+    // DEBUG_V (String ("effectColor: '") + effectColor + "'");
     setFromJSON (effectMarqueePixelAdvanceCount, jsonConfig, CN_pixel_count);
 
-    setFromJSON (FlashInfo.Enable,             jsonConfig, "FlashEnable");
-    setFromJSON (FlashInfo.MinIntensity,       jsonConfig, "FlashMinInt");
-    setFromJSON (FlashInfo.MaxIntensity,       jsonConfig, "FlashMaxInt");
-    setFromJSON (FlashInfo.MinDelayMS,         jsonConfig, "FlashMinDelay");
-    setFromJSON (FlashInfo.MaxDelayMS,         jsonConfig, "FlashMaxDelay");
-    setFromJSON (FlashInfo.MinDurationMS,      jsonConfig, "FlashMinDur");
-    setFromJSON (FlashInfo.MaxDurationMS,      jsonConfig, "FlashMaxDur");
+    setFromJSON (FlashInfo.Enable,             jsonConfig, CN_FlashEnable);
+    setFromJSON (FlashInfo.MinIntensity,       jsonConfig, CN_FlashMinInt);
+    setFromJSON (FlashInfo.MaxIntensity,       jsonConfig, CN_FlashMaxInt);
+    setFromJSON (FlashInfo.MinDelayMS,         jsonConfig, CN_FlashMinDelay);
+    setFromJSON (FlashInfo.MaxDelayMS,         jsonConfig, CN_FlashMaxDelay);
+    setFromJSON (FlashInfo.MinDurationMS,      jsonConfig, CN_FlashMinDur);
+    setFromJSON (FlashInfo.MaxDurationMS,      jsonConfig, CN_FlashMaxDur);
 
-    setFromJSON (TransitionInfo.StepsToTarget,  jsonConfig, "TransCount");
-    setFromJSON (TransitionInfo.TimeAtTargetMs, jsonConfig, "TransDelay");
+    setFromJSON (TransitionInfo.StepsToTarget,  jsonConfig, CN_TransCount);
+    setFromJSON (TransitionInfo.TimeAtTargetMs, jsonConfig, CN_TransDelay);
     // DEBUG_V(String(" TransitionInfo.StepsToTarget: ") + String(TransitionInfo.StepsToTarget));
     // DEBUG_V(String("TransitionInfo.TimeAtTargetMs: ") + String(TransitionInfo.TimeAtTargetMs));
 
@@ -753,7 +779,21 @@ void c_InputEffectEngine::setPixel (uint16_t pixelId, CRGB color)
         {
             PixelBuffer[3] = 0; // no white data
         }
-        OutputMgr.WriteChannelData(pixelId * ChannelsPerPixel, ChannelsPerPixel, PixelBuffer);
+
+        uint32_t StartingChannel = pixelId * ChannelsPerPixel;
+        uint32_t EndingChannel = StartingChannel + ChannelsPerPixel;
+        uint32_t ChansToSend = ChannelsPerPixel;
+        if(EndingChannel > InputDataBufferSize)
+        {
+            ChansToSend = InputDataBufferSize - StartingChannel;
+        }
+
+        // DEBUG_V (String ("    StartingChannel: ") + String (StartingChannel));
+        // DEBUG_V (String ("      EndingChannel: ") + String (EndingChannel));
+        // DEBUG_V (String ("InputDataBufferSize: ") + String (InputDataBufferSize));
+        // DEBUG_V (String ("        ChansToSend: ") + String (ChansToSend));
+
+        OutputMgr.WriteChannelData(StartingChannel, ChansToSend, PixelBuffer);
     }
 
     // DEBUG_END;
@@ -786,31 +826,39 @@ void c_InputEffectEngine::GetPixel (uint16_t pixelId, CRGB & out)
 //-----------------------------------------------------------------------------
 void c_InputEffectEngine::setRange (uint16_t FirstPixelId, uint16_t NumberOfPixels, CRGB color)
 {
+    // DEBUG_START;
     for (uint16_t i = FirstPixelId; i < min(uint32_t (FirstPixelId + NumberOfPixels), PixelCount); i++)
     {
         setPixel (i, color);
     }
+    // DEBUG_END;
 } // setRange
 
 //-----------------------------------------------------------------------------
 void c_InputEffectEngine::clearRange (uint16_t FirstPixelId, uint16_t NumberOfPixels)
 {
+    // DEBUG_START;
     for (uint16_t i = FirstPixelId; i < min (uint32_t (FirstPixelId + NumberOfPixels), PixelCount); i++)
     {
         setPixel (i, { 0, 0, 0 });
     }
+    // DEBUG_END;
 }
 
 //-----------------------------------------------------------------------------
 void c_InputEffectEngine::setAll (CRGB color)
 {
+    // DEBUG_START;
     setRange (0, PixelCount, color);
+    // DEBUG_END;
 } // setAll
 
 //-----------------------------------------------------------------------------
 void c_InputEffectEngine::clearAll ()
 {
+    // DEBUG_START;
     clearRange (0, PixelCount);
+    // DEBUG_END;
 } // clearAll
 
 //-----------------------------------------------------------------------------
