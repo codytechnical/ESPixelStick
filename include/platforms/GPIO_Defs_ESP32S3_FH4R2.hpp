@@ -25,26 +25,24 @@ const OM_OutputPortDefinition_t OM_OutputPortDefinitions[] =
     
     {OM_PortId_t(0), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_2}},
     {OM_PortId_t(0), OM_PortType_t::OM_RELAY, {gpio_num_t::GPIO_NUM_2}},
-    //onboard LED GPIO48
-    {OM_PortId_t(1), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_48}},
-    //my s3fhr2 is unstable or doesn't work at all with these enabled
-   // {OM_PortId_t(2), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_2}},
-  //  {OM_PortId_t(2), OM_PortType_t::OM_RELAY,  {gpio_num_t::GPIO_NUM_3}},
-  //  {OM_PortId_t(3), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_5}},
- //   {OM_PortId_t(3), OM_PortType_t::OM_RELAY,  {gpio_num_t::GPIO_NUM_5}},
-  //  {OM_PortId_t(4), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_6}},
-  //  {OM_PortId_t(4), OM_PortType_t::OM_RELAY,  {gpio_num_t::GPIO_NUM_6}},
-  //  {OM_PortId_t(5), OM_PortType_t::OM_I2C,    {gpio_num_t::GPIO_NUM_12, gpio_num_t::GPIO_NUM_13}},
+    {OM_PortId_t(1), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_1}},
+    {OM_PortId_t(1), OM_PortType_t::OM_RELAY, {gpio_num_t::GPIO_NUM_1}},
+    {OM_PortId_t(2), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_8}},
+    {OM_PortId_t(2), OM_PortType_t::OM_RELAY,  {gpio_num_t::GPIO_NUM_8}},
+    {OM_PortId_t(3), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_9}},
+    {OM_PortId_t(3), OM_PortType_t::OM_RELAY,  {gpio_num_t::GPIO_NUM_9}},
+    //SD card reader gets very flaky /wifi doesn't work - skipping 5th output
+    //{OM_PortId_t(4), OM_PortType_t::OM_SERIAL, {gpio_num_t::GPIO_NUM_48}},
+    {OM_PortId_t(5), OM_PortType_t::OM_I2C,    {gpio_num_t::GPIO_NUM_12, gpio_num_t::GPIO_NUM_13}},
 };
 
 // File Manager
 #define SUPPORT_SD
 #define ENABLE_DEDICATED_SPI 1
-//GPIO 7,6,5,4 makes the wifi unstable
-#define SD_CARD_MISO_PIN        gpio_num_t::GPIO_NUM_8
-#define SD_CARD_MOSI_PIN        gpio_num_t::GPIO_NUM_9
-#define SD_CARD_CLK_PIN         gpio_num_t::GPIO_NUM_10
-#define SD_CARD_CS_PIN          gpio_num_t::GPIO_NUM_11
+#define SD_CARD_MISO_PIN        gpio_num_t::GPIO_NUM_4
+#define SD_CARD_MOSI_PIN        gpio_num_t::GPIO_NUM_5
+#define SD_CARD_CLK_PIN         gpio_num_t::GPIO_NUM_6
+#define SD_CARD_CS_PIN          gpio_num_t::GPIO_NUM_7
 
 #define DEFAULT_RELAY_GPIO      gpio_num_t::GPIO_NUM_15
 
